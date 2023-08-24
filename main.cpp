@@ -1,5 +1,5 @@
-#include "Thread.h"
 #include <iostream>
+#include "Thread.h"
 
 
 using namespace std;
