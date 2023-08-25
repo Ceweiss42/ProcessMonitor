@@ -1,56 +1,63 @@
 #include <iostream>
 #include <vector>
 #include "Thread.h"
+#include <X11/Xlib.h>
+#include <unistd.h>
 
 
 using namespace std;
 
 
-void populateProcesses(vector<Thread>* processes)
-{
-
-    Thread a("A", 1, 2);
-    Thread b("B", 2, 3);
-    Thread c("C", 3, 4);
-
-    processes->push_back(a);
-    processes->push_back(b);
-    processes->push_back(c);
-
-}
-
-void showProcesses(vector<Thread>* processes)
-{
-    vector<Thread>::iterator i = processes->begin();
-
-  cout << "Vector: ";
- 
-  // run for loop from 0 to vecSize
-  for(i; i < processes->end(); i++)
-  {
-    // access value in the memory to which the pointer
-    // is referencing
-    cout << i->toString();
-  }
-
-  cout << endl;
-}
-
 int main()
 {
-    cout << "This is a test of the Thread Process Application..." << endl;
-    cout << "Creating Threads..." << endl;
+  //First, open a display and set up a window
+  Display *display = XOpenDisplay(NULL);
+  if (!display)
+  {
+    cerr << "Error: Cannot Open Display" << endl;
+    return 1;
+  }
 
-    vector<Thread> processes;
+  int screenNum = DefaultScreen(display);
+  Window root = RootWindow(display, screenNum);
 
-    populateProcesses(&processes);
+  Window background = XCreateSimpleWindow(display, root, 0, 0, 400, 300, 1, BlackPixel(display, screenNum), WhitePixel(display, screenNum));
 
-    showProcesses(&processes);
-    
-    string s;
-    cin >> s;
+  XSelectInput(display, background, ExposureMask | KeyPressMask);
+
+  XMapWindow(display, background);
+
+  GC gc = XCreateGC(display, background, 0, NULL);
+
+  XColor blue;
+  Colormap colormap = DefaultColormap(display, screenNum);
+  XParseColor(display, colormap, "#001AFF", &blue);
+  XAllocColor(display, colormap, &blue);
 
 
-    return 0;
+  XSetWindowBackground(display, background, blue.pixel);
+  
+  XSetForeground(display, gc, BlackPixel(display, screenNum));
+
+  XEvent event;
+  int count = 0;
+  while (true)
+  {
+
+    // Clear the window and redraw the text
+    XClearWindow(display, background);
+    string message = to_string(count);
+    XDrawString(display, background, gc, 10, 30, message.data(), message.length());
+
+    // Introduce a delay (usleep) to control the update rate
+    usleep(1000); // Sleep for 1 second
+    count++;
+
+  }
+
+  XFreeGC(display, gc);
+  XDestroyWindow(display, background);
+  XCloseDisplay(display);
+  return 0;
 
 }
